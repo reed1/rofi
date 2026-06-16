@@ -239,6 +239,7 @@ rofi_sources = files(
         'source/rofi-icon-fetcher.c',
         'source/css-colors.c',
         'source/view.c',
+        'source/tiered-sort.c',
         'source/widgets/box.c',
         'source/widgets/icon.c',
         'source/widgets/container.c',

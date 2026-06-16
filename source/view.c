@@ -55,6 +55,8 @@
 
 #include "theme.h"
 
+#include "tiered-sort.h"
+
 #ifdef ENABLE_XCB
 #include "xcb-internal.h"
 #include "xcb.h"
@@ -459,6 +461,10 @@ static void filter_elements(thread_state *ts,
         switch (config.sorting_method_enum) {
         case SORT_FZF:
           t->state->distance[i] = rofi_scorer_fuzzy_evaluate(
+              t->pattern, t->plen, str, slen, t->state->case_sensitive);
+          break;
+        case SORT_TIERED:
+          t->state->distance[i] = rofi_scorer_tiered_evaluate(
               t->pattern, t->plen, str, slen, t->state->case_sensitive);
           break;
         case SORT_NORMAL:

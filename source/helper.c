@@ -680,11 +680,13 @@ int config_sanity_check(void) {
       config.sorting_method_enum = SORT_NORMAL;
     } else if (g_strcmp0(config.sorting_method, "fzf") == 0) {
       config.sorting_method_enum = SORT_FZF;
+    } else if (g_strcmp0(config.sorting_method, "tiered") == 0) {
+      config.sorting_method_enum = SORT_TIERED;
     } else {
       g_string_append_printf(
           msg,
           "\t<b>config.sorting_method</b>=%s is not a valid sorting "
-          "strategy.\nValid options are: normal or fzf.\n",
+          "strategy.\nValid options are: normal, fzf or tiered.\n",
           config.sorting_method);
       found_error = 1;
     }
