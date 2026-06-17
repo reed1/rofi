@@ -36,6 +36,12 @@ entry, so a leading `.` (or any punctuation) does not demote an entry. Searching
 **no intra-tier tiebreak**, so entries sharing a tier keep their original input
 order (rofi sorts with `g_qsort_with_data`, a stable merge sort).
 
+Both scorers strip pango markup before ranking (mirroring the matcher, which
+already does this in `dmenu.c`). rofi otherwise scores against the raw entry,
+so with `-markup-rows` every label starts with `<span …>` — the prefix tier
+would never fire and the substring tiebreak would be skewed by the (variable)
+markup-prefix length, burying entries that carry extra tags like `<b>`.
+
 Pair either with `-matching fuzzy`, which admits all three kinds of match as
 candidates so the tiered sorter has something to rank.
 

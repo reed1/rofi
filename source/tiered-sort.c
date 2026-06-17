@@ -1,13 +1,40 @@
 #include "tiered-sort.h"
 
 #include <glib.h>
+#include <pango/pango.h>
 #include <string.h>
+
+// rofi scores entries against their raw text (mode_get_completion), which with
+// -markup-rows still contains pango markup. The matcher strips it (see
+// dmenu.c) but the scorer path does not, so without this every entry would
+// start with "<span ...>" — the prefix tier would never fire and the substring
+// tiebreak would be polluted by the markup prefix length. Falls back to a
+// plain copy when there is no markup or it fails to parse.
+static char *strip_markup(const char *s) {
+  char *out = NULL;
+  if (strchr(s, '<') != NULL &&
+      pango_parse_markup(s, -1, 0, NULL, &out, NULL, NULL)) {
+    return out;
+  }
+  return g_strdup(s);
+}
+
+// Strip markup, then casefold unless case_sensitive.
+static char *normalize(const char *s, const int case_sensitive) {
+  char *plain = strip_markup(s);
+  if (case_sensitive) {
+    return plain;
+  }
+  char *folded = g_utf8_casefold(plain, -1);
+  g_free(plain);
+  return folded;
+}
 
 // Returns a newly-allocated copy of `s` keeping only alphabetic characters,
 // casefolded unless case_sensitive. Used so leading/embedded punctuation (e.g.
 // a leading '.') does not demote an entry into a lower tier.
 static char *alpha_only(const char *s, const int case_sensitive) {
-  char *folded = case_sensitive ? g_strdup(s) : g_utf8_casefold(s, -1);
+  char *folded = normalize(s, case_sensitive);
   GString *out = g_string_new(NULL);
   for (const char *it = folded; *it; it = g_utf8_next_char(it)) {
     gunichar c = g_utf8_get_char(it);
@@ -30,8 +57,8 @@ int rofi_scorer_tiered_evaluate(const char *pattern, glong plen,
     return 0;
   }
 
-  char *p = case_sensitive ? g_strdup(pattern) : g_utf8_casefold(pattern, -1);
-  char *s = case_sensitive ? g_strdup(str) : g_utf8_casefold(str, -1);
+  char *p = normalize(pattern, case_sensitive);
+  char *s = normalize(str, case_sensitive);
   int s_bytes = (int)strlen(s);
 
   int tier;
