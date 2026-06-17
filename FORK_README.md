@@ -29,7 +29,14 @@ A new `-sorting-method tiered` option that ranks matches in tiers
 
 Within a tier, shorter entries and earlier / tighter matches rank first.
 
-Pair it with `-matching fuzzy`, which admits all three kinds of match as
+A second `-sorting-method tiered-alphabetic` option uses the same tiers but
+first strips **all non-alphabetic characters** from both the input and the
+entry, so a leading `.` (or any punctuation) does not demote an entry. Searching
+`do` then treats `.dotfiles` as a prefix match, same tier as `dooit`. It applies
+**no intra-tier tiebreak**, so entries sharing a tier keep their original input
+order (rofi sorts with `g_qsort_with_data`, a stable merge sort).
+
+Pair either with `-matching fuzzy`, which admits all three kinds of match as
 candidates so the tiered sorter has something to rank.
 
 The implementation is kept in its own files to minimize the diff against
@@ -38,15 +45,18 @@ the few lines of integration glue needed to reach the new code.
 
 New files (all fork-only):
 
-- `include/tiered-sort.h` — declares `rofi_scorer_tiered_evaluate`
-- `source/tiered-sort.c` — implements the scorer
+- `include/tiered-sort.h` — declares the scorers
+- `source/tiered-sort.c` — implements `rofi_scorer_tiered_evaluate` and
+  `rofi_scorer_tiered_alphabetic_evaluate`
 
 Original files touched (integration hooks only):
 
-- `include/settings.h` — add `SORT_TIERED` to the `SortingMethod` enum
-- `source/helper.c` — parse `"tiered"` in `config_sanity_check`
-- `source/view.c` — `#include "tiered-sort.h"` and dispatch `SORT_TIERED` to
-  the scorer in `filter_elements`
+- `include/settings.h` — add `SORT_TIERED` / `SORT_TIERED_ALPHABETIC` to the
+  `SortingMethod` enum
+- `source/helper.c` — parse `"tiered"` / `"tiered-alphabetic"` in
+  `config_sanity_check`
+- `source/view.c` — `#include "tiered-sort.h"` and dispatch the tiered methods
+  to their scorers in `filter_elements`
 - `meson.build` — add `source/tiered-sort.c` to the `rofi` sources
 
 The man page (`doc/rofi.1.markdown`) is intentionally left untouched to avoid

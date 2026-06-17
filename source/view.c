@@ -467,6 +467,10 @@ static void filter_elements(thread_state *ts,
           t->state->distance[i] = rofi_scorer_tiered_evaluate(
               t->pattern, t->plen, str, slen, t->state->case_sensitive);
           break;
+        case SORT_TIERED_ALPHABETIC:
+          t->state->distance[i] = rofi_scorer_tiered_alphabetic_evaluate(
+              t->pattern, t->plen, str, slen, t->state->case_sensitive);
+          break;
         case SORT_NORMAL:
         default:
           t->state->distance[i] = levenshtein(t->pattern, t->plen, str, slen,

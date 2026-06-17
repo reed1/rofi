@@ -47,7 +47,12 @@ typedef enum {
 /**
  * Possible sorting methods for listview.
  */
-typedef enum { SORT_NORMAL = 0, SORT_FZF = 1, SORT_TIERED = 2 } SortingMethod;
+typedef enum {
+  SORT_NORMAL = 0,
+  SORT_FZF = 1,
+  SORT_TIERED = 2,
+  SORT_TIERED_ALPHABETIC = 3
+} SortingMethod;
 
 typedef enum {
   DISPLAY_XCB,

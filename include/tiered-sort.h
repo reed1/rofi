@@ -25,4 +25,16 @@ int rofi_scorer_tiered_evaluate(const char *pattern, glong plen,
                                 const char *str, glong slen,
                                 const int case_sensitive);
 
+/**
+ * Same tiering as rofi_scorer_tiered_evaluate, but all non-alphabetic
+ * characters are stripped from both pattern and entry before matching, so a
+ * leading '.' (e.g. ".dotfiles") does not demote the entry. Entries sharing a
+ * tier are left in their original input order (no intra-tier tiebreak).
+ *
+ * @returns the tier (lower sorts higher).
+ */
+int rofi_scorer_tiered_alphabetic_evaluate(const char *pattern, glong plen,
+                                           const char *str, glong slen,
+                                           const int case_sensitive);
+
 #endif // ROFI_TIERED_SORT_H

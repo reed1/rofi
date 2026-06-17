@@ -3,6 +3,22 @@
 #include <glib.h>
 #include <string.h>
 
+// Returns a newly-allocated copy of `s` keeping only alphabetic characters,
+// casefolded unless case_sensitive. Used so leading/embedded punctuation (e.g.
+// a leading '.') does not demote an entry into a lower tier.
+static char *alpha_only(const char *s, const int case_sensitive) {
+  char *folded = case_sensitive ? g_strdup(s) : g_utf8_casefold(s, -1);
+  GString *out = g_string_new(NULL);
+  for (const char *it = folded; *it; it = g_utf8_next_char(it)) {
+    gunichar c = g_utf8_get_char(it);
+    if (g_unichar_isalpha(c)) {
+      g_string_append_unichar(out, c);
+    }
+  }
+  g_free(folded);
+  return g_string_free(out, FALSE);
+}
+
 int rofi_scorer_tiered_evaluate(const char *pattern, glong plen,
                                 const char *str, G_GNUC_UNUSED glong slen,
                                 const int case_sensitive) {
@@ -63,4 +79,40 @@ int rofi_scorer_tiered_evaluate(const char *pattern, glong plen,
     tiebreak = TIER_STRIDE - 1;
   }
   return tier * TIER_STRIDE + tiebreak;
+}
+
+int rofi_scorer_tiered_alphabetic_evaluate(const char *pattern, glong plen,
+                                           const char *str,
+                                           G_GNUC_UNUSED glong slen,
+                                           const int case_sensitive) {
+  if (plen == 0) {
+    return 0;
+  }
+
+  char *p = alpha_only(pattern, case_sensitive);
+  char *s = alpha_only(str, case_sensitive);
+
+  int tier;
+  if (g_str_has_prefix(s, p)) {
+    tier = 0;
+  } else if (strstr(s, p) != NULL) {
+    tier = 1;
+  } else {
+    const char *pit = p;
+    const char *sit = s;
+    while (*pit && *sit) {
+      if (g_utf8_get_char(pit) == g_utf8_get_char(sit)) {
+        pit = g_utf8_next_char(pit);
+      }
+      sit = g_utf8_next_char(sit);
+    }
+    tier = (*pit == '\0') ? 2 : 3;
+  }
+
+  g_free(p);
+  g_free(s);
+
+  // No intra-tier tiebreak: entries sharing a tier keep their original input
+  // order (g_qsort_with_data is a stable merge sort).
+  return tier;
 }
