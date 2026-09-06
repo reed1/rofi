@@ -358,6 +358,10 @@ typedef struct rofi_range_pair {
 typedef struct rofi_int_matcher_t {
   GRegex *regex;
   gboolean invert;
+  /** Set for -matching chord, which matches initials rather than a regex.
+   * `regex` is NULL then. */
+  char *chord;
+  gboolean chord_case_sensitive;
 } rofi_int_matcher;
 
 /**

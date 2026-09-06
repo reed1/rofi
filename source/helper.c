@@ -30,6 +30,7 @@
 #include "config.h"
 #define G_LOG_DOMAIN "Helper"
 
+#include "chord-match.h"
 #include "display.h"
 #include "helper-theme.h"
 #include "helper.h"
@@ -55,7 +56,7 @@
 #include <unistd.h>
 
 const char *const MatchingMethodStr[MM_NUM_MATCHERS] = {
-    "Normal", "Regex", "Glob", "Fuzzy", "Prefix"};
+    "Normal", "Regex", "Glob", "Fuzzy", "Prefix", "Chord"};
 
 static int MatchingMethodEnabled[MM_NUM_MATCHERS] = {
     MM_NORMAL,
@@ -145,7 +146,10 @@ int helper_parse_setup(char *string, char ***output, int *length, ...) {
 
 void helper_tokenize_free(rofi_int_matcher **tokens) {
   for (size_t i = 0; tokens && tokens[i]; i++) {
-    g_regex_unref((GRegex *)tokens[i]->regex);
+    if (tokens[i]->regex != NULL) {
+      g_regex_unref((GRegex *)tokens[i]->regex);
+    }
+    g_free(tokens[i]->chord);
     g_free(tokens[i]);
   }
   g_free(tokens);
@@ -273,6 +277,12 @@ static rofi_int_matcher *create_regex(const char *input, int case_sensitive) {
     r = prefix_regex(input);
     retv = R(r, case_sensitive);
     g_free(r);
+    break;
+  // Chord matching is not a regex: the typed chord is kept as-is and
+  // compared against the entry's initials by rofi_chord_match().
+  case MM_CHORD:
+    rv->chord = g_strdup(input);
+    rv->chord_case_sensitive = case_sensitive;
     break;
   default:
     r = g_regex_escape_string(input, -1);
@@ -522,6 +532,16 @@ PangoAttrList *helper_token_match_get_pango_attr(RofiHighlightColorStyle th,
       if (tokens[j]->invert) {
         continue;
       }
+      if (tokens[j]->chord != NULL) {
+        GArray *spans = rofi_chord_initial_spans(tokens[j]->chord, input);
+        for (guint k = 0; k < spans->len; k++) {
+          rofi_range_pair *span = &g_array_index(spans, rofi_range_pair, k);
+          helper_token_match_set_pango_attr_on_style(retv, span->start,
+                                                     span->stop, th);
+        }
+        g_array_unref(spans);
+        continue;
+      }
       g_regex_match(tokens[j]->regex, input, G_REGEX_MATCH_PARTIAL, &gmi);
       while (g_match_info_matches(gmi)) {
         int count = g_match_info_get_match_count(gmi);
@@ -538,6 +558,14 @@ PangoAttrList *helper_token_match_get_pango_attr(RofiHighlightColorStyle th,
   return retv;
 }
 
+// Chord tokens carry no regex; they match against the entry's initials.
+static int token_matches(const rofi_int_matcher *token, const char *input) {
+  if (token->chord != NULL) {
+    return rofi_chord_match(token->chord, input, token->chord_case_sensitive);
+  }
+  return g_regex_match(token->regex, input, 0, NULL);
+}
+
 int helper_token_match(rofi_int_matcher *const *tokens, const char *input) {
   int match = TRUE;
   // Do a tokenized match.
@@ -545,13 +573,13 @@ int helper_token_match(rofi_int_matcher *const *tokens, const char *input) {
     if (config.normalize_match) {
       char *r = utf8_helper_simplify_string(input);
       for (int j = 0; match && tokens[j]; j++) {
-        match = g_regex_match(tokens[j]->regex, r, 0, NULL);
+        match = token_matches(tokens[j], r);
         match ^= tokens[j]->invert;
       }
       g_free(r);
     } else {
       for (int j = 0; match && tokens[j]; j++) {
-        match = g_regex_match(tokens[j]->regex, input, 0, NULL);
+        match = token_matches(tokens[j], input);
         match ^= tokens[j]->invert;
       }
     }
@@ -723,7 +751,7 @@ int config_sanity_check(void) {
           g_string_append_printf(msg,
                                  "\t<b>config.matching</b>=%s is not a valid "
                                  "matching strategy.\nValid options are: glob, "
-                                 "regex, fuzzy, prefix or normal.\n",
+                                 "regex, fuzzy, prefix, chord or normal.\n",
                                  *str);
           found_error = 1;
         }

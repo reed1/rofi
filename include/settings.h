@@ -41,7 +41,8 @@ typedef enum {
   MM_GLOB = 2,
   MM_FUZZY = 3,
   MM_PREFIX = 4,
-  MM_NUM_MATCHERS = 5
+  MM_CHORD = 5,
+  MM_NUM_MATCHERS = 6
 } MatchingMethod;
 
 /**
@@ -157,6 +158,8 @@ typedef struct {
   unsigned int lazy_filter_limit;
   /** Auto select. */
   unsigned int auto_select;
+  /** Fire the single candidate whose initials the input spells out. */
+  unsigned int chord_select;
   /** Hosts file parsing */
   unsigned int parse_hosts;
   /** Knonw_hosts file parsing */

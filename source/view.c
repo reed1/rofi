@@ -55,6 +55,7 @@
 
 #include "theme.h"
 
+#include "chord-match.h"
 #include "tiered-sort.h"
 
 #ifdef ENABLE_XCB
@@ -888,6 +889,20 @@ static gboolean rofi_view_refilter_real(RofiViewState *state) {
         state->line_map[listview_get_selected(state->list_view)];
     state->retv = MENU_OK;
     state->quit = TRUE;
+  }
+
+  if (config.chord_select == TRUE && state->filtered_lines == 1 &&
+      state->text && strlen(state->text->text) > 0) {
+    int fstate = 0;
+    char *entry = mode_get_display_value(state->sw, state->line_map[0], &fstate,
+                                         NULL, TRUE);
+    if (rofi_chord_is_complete(state->text->text, entry,
+                               state->case_sensitive)) {
+      (state->selected_line) = state->line_map[0];
+      state->retv = MENU_OK;
+      state->quit = TRUE;
+    }
+    g_free(entry);
   }
 
   // Size the window.

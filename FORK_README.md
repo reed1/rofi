@@ -5,6 +5,8 @@ All custom work lives on the `reed` branch, based on the upstream `2.0.0` releas
 
 ## Why this fork exists
 
+### Tiered sorting
+
 The built-in sorting methods (`normal`/levenshtein and `fzf`) do not order
 results the way I want for project pickers. Typing `mex` against a list of
 project names should surface entries by how directly they match:
@@ -68,14 +70,72 @@ Original files touched (integration hooks only):
 The man page (`doc/rofi.1.markdown`) is intentionally left untouched to avoid
 conflicts; the `tiered` method is documented here instead.
 
+### Chord matching
+
+A `-matching chord` method plus a `-chord-select` flag, which together give
+rofi the behaviour of my `chord` script launcher: type the *initials* of an
+entry and it runs.
+
+The chord of an entry is the first character of each `-` separated segment:
+`rofi-path-dotfiles` is `rpd`. `-matching chord` keeps an entry whose chord
+*starts with* the input.
+
+Unlike every other matching method this one is **not a regex**.
+`create_regex()` stores the typed chord on the matcher and leaves `regex`
+NULL; `helper_token_match` compares it against the entry's initials directly.
+Initials are not something a regex expresses well, and the two things the
+feature needs beyond a yes/no answer — where the initials sit, so they can be
+highlighted, and whether the input has spelled *all* of them — are a scan of
+the string either way.
+
+`-chord-select` runs the lone remaining candidate the moment the input spells
+out its **complete** chord. A chord that merely narrows to one candidate is not
+enough: otherwise the trailing keystrokes of a longer chord would leak into
+whatever window comes up next. It sits beside the existing `-auto-select` check
+in `filter_elements`.
+
+New files (all fork-only):
+
+- `include/chord-match.h` — declares the matcher, the completeness test and the
+  highlight spans
+- `source/chord-match.c` — implements `rofi_chord_match`,
+  `rofi_chord_is_complete` and `rofi_chord_initial_spans`
+
+Original files touched (integration hooks only):
+
+- `include/settings.h` — add `MM_CHORD` to `MatchingMethod` (bumping
+  `MM_NUM_MATCHERS`) and a `chord_select` field
+- `include/rofi-types.h` — carry the typed chord on `rofi_int_matcher`, for the
+  tokens that have no regex
+- `source/helper.c` — add `"Chord"` to `MatchingMethodStr` (which is what
+  `config_sanity_check` parses `-matching` against, so no separate parser), a
+  `case MM_CHORD` in `create_regex`, and the chord branches in
+  `helper_token_match`, `helper_token_match_get_pango_attr` and
+  `helper_tokenize_free`
+- `source/view.c` — `#include "chord-match.h"` and the `-chord-select` check
+  next to `-auto-select` in `filter_elements`
+- `source/xrmoptions.c` — register `-chord-select`
+- `config/config.c` — default `chord_select` to `FALSE`
+- `meson.build` — add `source/chord-match.c` to the `rofi` sources
+
+Nothing outside `source/helper.c` touches `rofi_int_matcher->regex`, so a
+matcher without one stays contained.
+
+A plugin (`.so`) mode could not do this: `include/mode-private.h` gives a
+plugin custom matching and display, but no way to say "accept this entry now",
+so the auto-fire has to come from the view. Doing it as a matching method is
+also more general — it works on any dmenu list, not just one mode's entries.
+
 ## How to use
 
 ```bash
 rofi -dmenu -matching fuzzy -sort -sorting-method tiered
+rofi -dmenu -i -matching chord -chord-select
 ```
 
-In this dotfiles repo it is wired into the project picker at
-`rlocal/app/rofi-vscode/utils/interface.py`.
+In this dotfiles repo `tiered-alphabetic` is wired into the project picker at
+`rlocal/app/rofi-vscode/shared/interface.py`, and `chord` into the script
+launcher at `rlocal/app/chord/main.py`.
 
 ## Packaging
 

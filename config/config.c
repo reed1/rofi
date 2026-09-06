@@ -114,6 +114,8 @@ Settings config = {
     .sidebar_mode = FALSE,
     /** auto select */
     .auto_select = FALSE,
+    /** chord select */
+    .chord_select = FALSE,
     /** Parse /etc/hosts file in ssh view. */
     .parse_hosts = FALSE,
     /** Parse ~/.ssh/known_hosts file in ssh view. */
