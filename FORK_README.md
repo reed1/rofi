@@ -126,11 +126,33 @@ plugin custom matching and display, but no way to say "accept this entry now",
 so the auto-fire has to come from the view. Doing it as a matching method is
 also more general — it works on any dmenu list, not just one mode's entries.
 
+### Up-wrap row
+
+`-up-wrap-row N` makes Up on the first row wrap to row `N` (1-based) instead
+of the last row, but only while the input is empty. Once a query is typed the
+rows are filtered and re-sorted, so `N` no longer points anywhere meaningful and
+Up wraps as usual. `0` (the default) keeps the stock behaviour, as does an `N`
+past the end of the list.
+
+The project picker lists active projects first, most recent on top. Passing
+the number of active projects makes Up from the top land on the least recently
+used one, which is the one worth closing, rather than on the inactive entries
+at the bottom that are only ever reached by typing.
+
+Original files touched (integration hooks only):
+
+- `include/settings.h` — an `up_wrap_row` field
+- `source/xrmoptions.c` — register `-up-wrap-row`
+- `config/config.c` — default `up_wrap_row` to `0`
+- `source/view.c` — the redirect in the `ROW_UP` case of
+  `rofi_view_trigger_global_action`
+
 ## How to use
 
 ```bash
 rofi -dmenu -matching fuzzy -sort -sorting-method tiered
 rofi -dmenu -i -matching chord -chord-select
+rofi -dmenu -up-wrap-row 3
 ```
 
 In this dotfiles repo `tiered-alphabetic` is wired into the project picker at

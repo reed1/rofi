@@ -116,6 +116,8 @@ Settings config = {
     .auto_select = FALSE,
     /** chord select */
     .chord_select = FALSE,
+    /** up wrap row */
+    .up_wrap_row = 0,
     /** Parse /etc/hosts file in ssh view. */
     .parse_hosts = FALSE,
     /** Parse ~/.ssh/known_hosts file in ssh view. */

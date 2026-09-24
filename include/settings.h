@@ -160,6 +160,9 @@ typedef struct {
   unsigned int auto_select;
   /** Fire the single candidate whose initials the input spells out. */
   unsigned int chord_select;
+  /** 1-based row that Up on the first row wraps to while the input is empty;
+   * 0 wraps to the last row. */
+  unsigned int up_wrap_row;
   /** Hosts file parsing */
   unsigned int parse_hosts;
   /** Knonw_hosts file parsing */

@@ -1176,7 +1176,14 @@ static void rofi_view_trigger_global_action(KeyBindingAction action) {
     listview_nav_prev(state->list_view);
     break;
   case ROW_UP:
-    listview_nav_up(state->list_view);
+    if (config.up_wrap_row > 0 &&
+        config.up_wrap_row <= state->filtered_lines &&
+        listview_get_selected(state->list_view) == 0 && state->text &&
+        strlen(state->text->text) == 0) {
+      listview_set_selected(state->list_view, config.up_wrap_row - 1);
+    } else {
+      listview_nav_up(state->list_view);
+    }
     break;
   case ROW_TAB:
     rofi_view_nav_row_tab(state);
