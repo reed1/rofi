@@ -1491,6 +1491,8 @@ static gboolean main_loop_x11_event_handler(xcb_generic_event_t *ev,
 }
 
 static int take_pointer(xcb_window_t w, int iters) {
+  // Fork: no pointer grab, so region screenshot tools can grab it instead.
+  return 1;
   int i = 0;
   while (TRUE) {
     if (xcb_connection_has_error(xcb->connection)) {

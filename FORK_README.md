@@ -147,12 +147,17 @@ Original files touched (integration hooks only):
 - `source/view.c` — the redirect in the `ROW_UP` case of
   `rofi_view_trigger_global_action`
 
-### No keyboard grab
+### No keyboard or pointer grab
 
 Upstream rofi takes an X keyboard grab while it is open. An active grab
 outranks every other client's key bindings, so i3's `Alt+1` never reaches i3:
 rofi receives it and types `1`. This fork skips the grab, so window manager
 bindings keep working with rofi up.
+
+It also skips the pointer grab. Only one client can hold it, so while rofi did,
+a region screenshot (`import -silent`, bound to `Win+N`) failed with "unable to
+grab mouse". Without it, `click-to-exit` no longer fires: clicking outside rofi
+goes to the window under the cursor and rofi stays open.
 
 Without the grab rofi only gets the keys sent to the focused window, and its
 override-redirect window is never focused by i3. So it relies on the upstream
@@ -170,9 +175,9 @@ Focus is handed back to the window that had it at launch even when a binding
 
 Original files touched:
 
-- `source/xcb/display.c` — `take_keyboard` returns success before grabbing.
-  Reporting success rather than failure keeps the lazy-grab retry loop from
-  giving up and quitting after 5 seconds.
+- `source/xcb/display.c` — `take_keyboard` and `take_pointer` return success
+  before grabbing. Reporting success rather than failure keeps the lazy-grab
+  retry loops from running (and, for the keyboard, quitting after 5 seconds).
 
 ## How to use
 
