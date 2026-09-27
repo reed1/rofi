@@ -147,6 +147,33 @@ Original files touched (integration hooks only):
 - `source/view.c` — the redirect in the `ROW_UP` case of
   `rofi_view_trigger_global_action`
 
+### No keyboard grab
+
+Upstream rofi takes an X keyboard grab while it is open. An active grab
+outranks every other client's key bindings, so i3's `Alt+1` never reaches i3:
+rofi receives it and types `1`. This fork skips the grab, so window manager
+bindings keep working with rofi up.
+
+Without the grab rofi only gets the keys sent to the focused window, and its
+override-redirect window is never focused by i3. So it relies on the upstream
+`steal-focus` option (off by default) to focus itself on open and hand focus
+back on close. Set it in `config.rasi`:
+
+```
+configuration {
+  steal-focus: true;
+}
+```
+
+Focus is handed back to the window that had it at launch even when a binding
+(like `Alt+1`) moved to another workspace while rofi was open.
+
+Original files touched:
+
+- `source/xcb/display.c` — `take_keyboard` returns success before grabbing.
+  Reporting success rather than failure keeps the lazy-grab retry loop from
+  giving up and quitting after 5 seconds.
+
 ## How to use
 
 ```bash

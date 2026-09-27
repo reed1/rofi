@@ -1520,6 +1520,8 @@ static int take_pointer(xcb_window_t w, int iters) {
 }
 
 static int take_keyboard(xcb_window_t w, int iters) {
+  // Fork: no keyboard grab, so WM bindings still work; needs steal-focus.
+  return 1;
   int i = 0;
   while (TRUE) {
     if (xcb_connection_has_error(xcb->connection)) {
