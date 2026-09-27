@@ -118,6 +118,8 @@ Settings config = {
     .chord_select = FALSE,
     /** up wrap row */
     .up_wrap_row = 0,
+    /** Take the X keyboard and pointer grabs while open */
+    .grab = TRUE,
     /** Parse /etc/hosts file in ssh view. */
     .parse_hosts = FALSE,
     /** Parse ~/.ssh/known_hosts file in ssh view. */

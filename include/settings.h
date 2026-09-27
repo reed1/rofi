@@ -163,6 +163,8 @@ typedef struct {
   /** 1-based row that Up on the first row wraps to while the input is empty;
    * 0 wraps to the last row. */
   unsigned int up_wrap_row;
+  /** Take the X keyboard and pointer grabs while open. */
+  unsigned int grab;
   /** Hosts file parsing */
   unsigned int parse_hosts;
   /** Knonw_hosts file parsing */

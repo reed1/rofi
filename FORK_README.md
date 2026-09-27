@@ -147,37 +147,38 @@ Original files touched (integration hooks only):
 - `source/view.c` — the redirect in the `ROW_UP` case of
   `rofi_view_trigger_global_action`
 
-### No keyboard or pointer grab
+### Optional grabs
 
-Upstream rofi takes an X keyboard grab while it is open. An active grab
+Upstream rofi takes an X keyboard and pointer grab while it is open. `-no-grab`
+(or `grab: false;` in `config.rasi`) skips both. The grabs stay on by default:
+without them, switching to another window takes keyboard focus away from rofi,
+and `Escape` no longer closes it.
+
+Skipping the keyboard grab lets window manager bindings through. An active grab
 outranks every other client's key bindings, so i3's `Alt+1` never reaches i3:
-rofi receives it and types `1`. This fork skips the grab, so window manager
-bindings keep working with rofi up.
+rofi receives it and types `1`.
 
-It also skips the pointer grab. Only one client can hold it, so while rofi did,
-a region screenshot (`import -silent`, bound to `Win+N`) failed with "unable to
-grab mouse". Without it, `click-to-exit` no longer fires: clicking outside rofi
-goes to the window under the cursor and rofi stays open.
+Skipping the pointer grab lets other tools take it. Only one client can hold
+it, so while rofi does, a region screenshot (`import -silent`, bound to `Win+N`)
+fails with "unable to grab mouse". Without it, `click-to-exit` no longer fires:
+clicking outside rofi goes to the window under the cursor and rofi stays open.
 
-Without the grab rofi only gets the keys sent to the focused window, and its
-override-redirect window is never focused by i3. So it relies on the upstream
-`steal-focus` option (off by default) to focus itself on open and hand focus
-back on close. Set it in `config.rasi`:
-
-```
-configuration {
-  steal-focus: true;
-}
-```
-
-Focus is handed back to the window that had it at launch even when a binding
-(like `Alt+1`) moved to another workspace while rofi was open.
+Without the keyboard grab rofi only gets the keys sent to the focused window,
+and its override-redirect window is never focused by i3. So `-no-grab` needs
+the upstream `-steal-focus` option (off by default) to focus rofi on open and
+hand focus back on close. Focus is handed back to the window that had it at
+launch even when a binding (like `Alt+1`) moved to another workspace while rofi
+was open.
 
 Original files touched:
 
+- `include/settings.h` — a `grab` field
+- `source/xrmoptions.c` — register `-grab`
+- `config/config.c` — default `grab` to `TRUE`
 - `source/xcb/display.c` — `take_keyboard` and `take_pointer` return success
-  before grabbing. Reporting success rather than failure keeps the lazy-grab
-  retry loops from running (and, for the keyboard, quitting after 5 seconds).
+  before grabbing when `grab` is off. Reporting success rather than failure
+  keeps the lazy-grab retry loops from running (and, for the keyboard, quitting
+  after 5 seconds).
 
 ## How to use
 
